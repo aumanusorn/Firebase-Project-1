@@ -1,0 +1,249 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<meta charset="utf-8">
+<title>4-20 mA Dashboard | Firebase + ESP8266 </title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- jQuery -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/4.5.2/firebase.js"></script>
+
+<!-- canvasjs -->
+<script src="js/jquery.canvasjs.min.js"></script>
+
+<!-- Material Design fonts -->
+<link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Roboto:300,400,500,700" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+
+<!-- Bootstrap -->
+<link rel="stylesheet" href="css/bootstrap.min.css">
+<link rel="stylesheet" href="css/bootstrap-material-design.min.css">
+<link rel="stylesheet" href="css/ripples.min.css">
+<script src="js/bootstrap.min.js"></script>
+<script src="js/material.min.js"></script>
+<script src="js/ripples.min.js"></script>
+
+<!-- Animate.css -->
+<link rel="stylesheet" href="css/animate.min.css">
+
+<script>
+var chart, toOffline;
+var newItems = false;
+// Initialize Firebase
+var config = {
+  apiKey: "AIzaSyA_-Q-TavaSXrP3oJ6isCs8G_nandJeil0",
+    authDomain: "test-project-12736.firebaseapp.com",
+    databaseURL: "https://test-project-12736.firebaseio.com",
+    projectId: "test-project-12736",
+    storageBucket: "test-project-12736.appspot.com",
+    messagingSenderId: "333777441387"
+};
+
+$(document).ready(function(e) {
+	$.material.init()
+
+	chart = new CanvasJS.Chart("chartContainer", {
+		title: {
+			text: "4-20 mA Analog Input"
+		},
+		axisX:{
+			valueFormatString: "HH:mm"
+		},
+		axisY: {
+			valueFormatString: "0.0#"
+		},
+		toolTip: {
+			shared: true,
+			contentFormatter: function (e) {
+				var content = CanvasJS.formatDate(e.entries[0].dataPoint.x, "HH:mm:ss") + "<br>";
+				content += "<strong>ch1</strong>: " + e.entries[0].dataPoint.y + " %";
+				content += "<strong>ch2</strong>: " + e.entries[1].dataPoint.y + " %";
+        content += "<strong>ch3</strong>: " + e.entries[2].dataPoint.y + " %";
+        content += "<strong>ch4</strong>: " + e.entries[3].dataPoint.y + " %";
+				return content;
+			}
+		},
+		animationEnabled: true,
+		data: [
+			{
+				type: "spline", //change it to line, area, column, pie, etc
+				dataPoints: []
+			},
+			{
+				type: "spline", //change it to line, area, column, pie, etc
+				dataPoints: []
+			}
+		]
+	});
+	chart.render();
+
+	firebase.initializeApp(config);
+
+	var analog_input = firebase.database().ref().child("analog_input");
+
+	analog_input.on("child_added", function(sanp) {
+		if (!newItems) return;
+		var row = sanp.val();
+
+		row.time = new Date(row.time);
+		chart.options.data[0].dataPoints.push({x: row.time, y: row.ch1});
+		chart.options.data[1].dataPoints.push({x: row.time, y: row.ch2});
+    chart.options.data[2].dataPoints.push({x: row.time, y: row.ch3});
+    chart.options.data[3].dataPoints.push({x: row.time, y: row.ch4});
+		chart.render();
+
+		$("#ch1 > .content").text(row.ch1 + " %");
+		$("#ch2 > .content").text(row.ch2 + " %");
+    $("#ch3 > .content").text(row.ch3 + " %");
+    $("#ch4 > .content").text(row.ch4 + " %");
+
+		$("#status").removeClass("danger").addClass("success");
+		$("#status > .content").text("ONLINE");
+
+		setTimeoffline();
+	});
+
+	var now = new Date();
+	analog_input.orderByChild("time").startAt(now.getFullYear() + "-" + (now.getMonth() + 1) + "-" + now.getDate()).once("value", function(sanp) {
+		console.log(sanp);
+		newItems = true;
+		var dataRows = sanp.val();
+		var lastRows = 0;
+		$.each(dataRows, function(index, row) {
+			row.time = new Date(row.time);
+			chart.options.data[0].dataPoints.push({x: row.time, y: row.ch1});
+			chart.options.data[1].dataPoints.push({x: row.time, y: row.ch2});
+      chart.options.data[2].dataPoints.push({x: row.time, y: row.ch3});
+      chart.options.data[3].dataPoints.push({x: row.time, y: row.ch4});
+			 lastRows = row;
+		});
+		chart.render();
+
+		var Arow = lastRows;
+		$("#ch1 > .content").html(Arow.ch1 + " %");
+		$("#ch2 > .content").html(Arow.ch2 + " %");
+    $("#ch3 > .content").html(Arow.ch3 + " %");
+    $("#ch4 > .content").html(Arow.ch4 + " %");
+
+		var now = new Date();
+		Arow.time = new Date(Arow.time);
+		if (Math.round(now) -  Math.round(Arow.time) < (2 * 60 * 1000)) {
+			$("#status").removeClass("danger").addClass("success");
+			$("#status > .content").text("ONLINE");
+		} else {
+			$("#status").removeClass("success").addClass("danger");
+			$("#status > .content").text("OFFLINE");
+		}
+
+		setTimeoffline();
+	});
+});
+
+var setTimeoffline = function() {
+	if (typeof toOffline === "number") clearTimeout(toOffline);
+
+	toOffline = setTimeout(function() {
+		$("#status").removeClass("success").addClass("danger");
+		$("#status > .content").text("OFFLINE");
+	}, 2 * 60 * 1000);
+}
+</script>
+
+<style>
+.dialog {
+	width: 100%;
+	border-radius: 4px;
+	margin-bottom: 20px;
+	box-shadow: 0 1px 6px 0 rgba(0, 0, 0, 0.12), 0 1px 6px 0 rgba(0, 0, 0, 0.12);
+}
+.dialog > .content {
+	padding: 30px 0;
+	border-radius: 6px 6px 0 0;
+	font-size: 64px;
+	color: rgba(255,255,255, 0.84);
+	text-align: center;
+}
+.dialog.primary > .content{
+	background: #00aa9a;
+}
+.dialog.success > .content {
+	background: #59b75c;
+}
+.dialog.info > .content {
+	background: #03a9f4;
+}
+.dialog.warning > .content {
+	background: #ff5722;
+}
+
+.dialog.danger > .content {
+	background: #f44336;
+}
+.dialog > .title {
+	background: #FFF;
+	border-radius: 0 0 6px 6px;
+	font-size: 22px;
+	color: rgba(0,0,0, 0.87);
+	text-align: center;
+	padding: 10px 0;
+	/* box-shadow: 0px 10px 8px -10px rgba(0, 0, 0, 0.4) inset; */
+	font-weight: bold;
+}
+.nav-tabs {
+	margin-bottom: 20px;
+}
+</style>
+</head>
+
+<body>
+  <div class="container">
+    <h1>4-20 mA Dashboard <small>Firebase + ESP8266</small></h1>
+    <hr />
+
+    <!-- Nav tabs -->
+    <ul class="nav nav-tabs" role="tablist">
+      <li role="presentation" class="active"><a href="#overview" aria-controls="home" role="tab" data-toggle="tab">Overview</a></li>
+      <li role="presentation"><a href="#history" aria-controls="profile" role="tab" data-toggle="tab">History</a></li>
+    </ul>
+
+    <!-- Tab panes -->
+    <div class="tab-content">
+      <div role="tabpanel" class="tab-pane active" id="overview">
+        <div class="row">
+           <div class="col-sm-4">
+             <div class="dialog primary fadeIn animated" id="ch1">
+               <div class="content">00.0 %</div>
+               <div class="title">ch1</div>
+             </div>
+           </div>
+           <div class="col-sm-4">
+             <div class="dialog info fadeIn animated" id="ch2">
+               <div class="content">00.0 %</div>
+               <div class="title">ch2</div>
+             </div>
+           </div>
+           <div class="col-sm-4">
+             <div class="dialog info fadeIn animated" id="ch3">
+               <div class="content">00.0 %</div>
+               <div class="title">ch3</div>
+             </div>
+           </div>
+           <div class="col-sm-4">
+             <div class="dialog info fadeIn animated" id="ch4">
+               <div class="content">00.0 %</div>
+               <div class="title">ch4</div>
+             </div>
+           </div>
+        </div>
+      </div>
+      <div role="tabpanel" class="tab-pane" id="history">
+        <div id="chartContainer" style="height: 300px; width: 100%;"></div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
