@@ -1,0 +1,52 @@
+<!DOCTYPE HTML>
+<html>
+
+<body>
+
+<script src="https://www.gstatic.com/firebasejs/4.5.2/firebase.js"></script>
+
+<script>
+  var config = {
+    apiKey: "AIzaSyA_-Q-TavaSXrP3oJ6isCs8G_nandJeil0",
+      authDomain: "test-project-12736.firebaseapp.com",
+      databaseURL: "https://test-project-12736.firebaseio.com",
+      projectId: "test-project-12736",
+      storageBucket: "test-project-12736.appspot.com",
+      messagingSenderId: "333777441387"
+  };
+  firebase.initializeApp(config);
+  /*var ref = firebase.database().ref("/analog_input/ch1").on("value", function(snapshot) {
+    var ch1 = snapshot.val();
+  });
+  var ref = firebase.database().ref("/analog_input/ch2").on("value", function(snapshot) {
+    var ch2 = snapshot.val();
+  });
+  var ref = firebase.database().ref("/analog_input/ch3").on("value", function(snapshot) {
+    var ch3 = snapshot.val();
+  });
+  var ref = firebase.database().ref("/analog_input/ch4").on("value", function(snapshot) {
+    var ch4 = snapshot.val();
+    });*/
+
+</script>
+
+<script>
+    var ref1 = firebase.database().ref().on("value", function (snapshot) {
+        var a1 = snapshot.child("ch1").val();
+        var a2 = snapshot.child("ch2").val();
+        var a3 = snapshot.child("ch3").val();
+        var a4 = snapshot.child("ch4").val();
+        var t1 = Date(snapshot.child("time").val())
+
+        document.write("ch1 =" + " " + a1 + "<br>");
+        document.write("ch2 =" + " " + a2 + "<br>");
+        document.write("ch3 =" + " " + a3 + "<br>");
+        document.write("ch4 =" + " " + a4 + "<br>");
+        document.write("date & time =" + " " + t1 + "<br>");
+    });
+
+</script>
+
+</body>
+
+</html>
