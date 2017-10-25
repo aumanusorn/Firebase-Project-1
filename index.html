@@ -4,8 +4,10 @@
 <body>
 
 <script src="https://www.gstatic.com/firebasejs/4.5.2/firebase.js"></script>
-
+<script src="https://canvasjs.com/assets/script/canvasjs.min.js"></script>
+<div id="chartContainer" style="height: 370px; width: 100%;"></div>
 <script>
+
   var config = {
     apiKey: "AIzaSyA_-Q-TavaSXrP3oJ6isCs8G_nandJeil0",
       authDomain: "test-project-12736.firebaseapp.com",
@@ -27,25 +29,142 @@
   var ref = firebase.database().ref("/analog_input/ch4").on("value", function(snapshot) {
     var ch4 = snapshot.val();
     });*/
+    var dataPoints1 = [];
+    var dataPoints2 = [];
+    var dataPoints3 = [];
+    var dataPoints4 = [];
 
-</script>
+    var yValue1 = 0;
+    var yValue2 = 0;
+    var yValue3 = 0;
+    var yValue4 = 0;
 
-<script>
+    var time = new Date();
+
+
     var ref1 = firebase.database().ref().on("value", function (snapshot) {
-        var a1 = snapshot.child("ch1").val();
-        var a2 = snapshot.child("ch2").val();
-        var a3 = snapshot.child("ch3").val();
-        var a4 = snapshot.child("ch4").val();
-        var t1 = Date(snapshot.child("time").val());
+        var yValue1 = snapshot.child("ch1").val();
+        var yValue2 = snapshot.child("ch2").val();
+        var yValue3 = snapshot.child("ch3").val();
+        var yValue4 = snapshot.child("ch4").val();
 
-        document.write("ch1 =" + " " + a1 + "<br>");
-        document.write("ch2 =" + " " + a2 + "<br>");
-        document.write("ch3 =" + " " + a3 + "<br>");
-        document.write("ch4 =" + " " + a4 + "<br>");
+    /*
+        document.write("ch1 =" + " " + yValue1 + "<br>");
+        document.write("ch2 =" + " " + yValue2 + "<br>");
+        document.write("ch3 =" + " " + yValue3 + "<br>");
+        document.write("ch4 =" + " " + yValue4 + "<br>");
         document.write("date & time =" + " " + t1 + "<br>");
+    */
+
+  var chart = new CanvasJS.Chart("chartContainer", {
+  	zoomEnabled: true,
+  	title: {
+  		text: "4-20mA Analog Input"
+  	},
+  	axisX: {
+  		title: "chart updates every 1 sec"
+  	},
+  	axisY:{
+  		includeZero: true
+  	},
+  	toolTip: {
+  		shared: true
+  	},
+  	legend: {
+  		cursor:"pointer",
+  		verticalAlign: "top",
+  		fontSize: 22,
+  		fontColor: "dimGrey",
+  		itemclick : toggleDataSeries
+  	},
+  	data: [{
+  		type: "line",
+  		xValueType: "dateTime",
+  		yValueFormatString: "##.00",
+  		xValueFormatString: "hh:mm:ss TT",
+  		showInLegend: true,
+  		name: "Ch1",
+  		dataPoints: dataPoints1
+  		},
+  		{
+  			type: "line",
+  			xValueType: "dateTime",
+  			yValueFormatString: "##.00",
+  			showInLegend: true,
+  			name: "Ch2" ,
+  			dataPoints: dataPoints2
+  	  },
+      {
+        type: "line",
+        xValueType: "dateTime",
+        yValueFormatString: "##.00",
+        showInLegend: true,
+        name: "Ch3" ,
+        dataPoints: dataPoints3
+      },
+      {
+        type: "line",
+        xValueType: "dateTime",
+        yValueFormatString: "##.00",
+        showInLegend: true,
+        name: "Ch4" ,
+        dataPoints: dataPoints4
+      }]
+  });
+
+  function toggleDataSeries(e) {
+  	if (typeof(e.dataSeries.visible) === "undefined" || e.dataSeries.visible) {
+  		e.dataSeries.visible = false;
+  	}
+  	else {
+  		e.dataSeries.visible = true;
+  	}
+  	chart.render();
+  }
+
+  var updateInterval = 1000;
+
+  function updateChart() {
+  	/*count = count || 1;*/
+
+  	for (var i = 0; i < 1; i++) {
+  		time.setTime(time.getTime()+updateInterval);
+
+
+  	// pushing the new values
+  	dataPoints1.push({
+  		x: time.getTime(),
+  		y: yValue1
+  	});
+  	dataPoints2.push({
+  		x: time.getTime(),
+  		y: yValue2
+  	});
+    dataPoints3.push({
+      x: time.getTime(),
+      y: yValue3
     });
+    dataPoints4.push({
+      x: time.getTime(),
+      y: yValue4
+    });
+  }
+
+  	// updating legend text with  updated with y Value
+  	chart.options.data[0].legendText = "Ch1: " + yValue1 + "%";
+  	chart.options.data[1].legendText = "Ch2: " + yValue2 + "%";
+    chart.options.data[2].legendText = "Ch3: " + yValue3 + "%";
+    chart.options.data[3].legendText = "Ch4: " + yValue4 + "%";
+  	chart.render();
+  }
+  // generates first set of dataPoints
+  updateChart();
+  /*setInterval(function(){updateChart()},updateInterval);*/
+
+});
 
 </script>
+
 
 </body>
 
